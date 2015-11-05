@@ -1,8 +1,8 @@
-premier: premier.c
-	gcc premier.c -o premier -lm
-
 list.txt:	list1.txt list2.txt list3.txt list4.txt list5.txt list6.txt list7.txt list8.txt list9.txt list10.txt list11.txt list12.txt list13.txt list14.txt list15.txt list16.txt list17.txt list18.txt list19.txt list20.txt
 	cp list1.txt list.txt ; cat list2.txt >> list.txt ; cat list3.txt >> list.txt ; cat list4.txt >> list.txt ; cat list5.txt >> list.txt ; cat list6.txt >> list.txt ; cat list7.txt >> list.txt ; cat list8.txt >> list.txt ; cat list9.txt >> list.txt ; cat list10.txt >> list.txt ; cat list11.txt >> list.txt ; cat list12.txt >> list.txt ; cat list13.txt >> list.txt ; cat list14.txt >> list.txt ; cat list15.txt >> list.txt ; cat list16.txt >> list.txt ; cat list17.txt >> list.txt ; cat list18.txt >> list.txt ; cat list19.txt >> list.txt ; cat list20.txt >> list.txt ;
+
+premier: premier.c
+	gcc premier.c -o premier -lm
 
 list1.txt: premier
 	./premier 2 `echo 1*200000000/20-1 |bc` > list1.txt

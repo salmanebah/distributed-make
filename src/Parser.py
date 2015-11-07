@@ -44,7 +44,19 @@ class Parser:
 
     def __init__(self):
         self._target_to_task = {}
-        
+        self._root_task = self._get_task_from_target('[ROOT]')
+
+
+    def parse_makefile(self):
+        for line in fileinput.input():
+            line = line.strip()
+            if not line.startswith(_TARGET_START_LINE):
+                continue
+            target = _extract_target_name(line)
+            child_task = self._get_task_from_target(target)
+            self._root_task.dependencies.add(child_task)
+            _build_dependencies_tree(child_task)
+
     def _get_task_from_target(self, target):
         if target in self._target_to_task:
             return self._target_to_task[target]

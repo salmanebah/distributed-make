@@ -1,4 +1,4 @@
-import fileinput
+import sys
 
 
 class State:
@@ -32,7 +32,7 @@ class Task:
         return not self.__eq__(other)
 
     def get_debug_node(self):
-        return "node" + str(self_id)
+        return "node" + str(self._id)
 
 class Parser:
     _TARGET_START = '`'
@@ -49,17 +49,17 @@ class Parser:
 
     def parse_makefile(self):
         while True :
-            line = fileinput.input().readline()
+            line = sys.stdin.readline()
             # EOF reached
             if not line:
                 break
             line = line.strip()
-            if not line.startswith(_TARGET_START_LINE):
+            if not line.startswith(Parser._TARGET_START_LINE):
                 continue
-            target = _extract_target_name(line)
+            target = Parser._extract_target_name(line)
             child_task = self._get_task_from_target(target)
             self._root_task.dependencies.add(child_task)
-            _build_dependencies_tree(child_task)
+            self._build_dependencies_tree(child_task)
 
     
     def sort_tasks(self):

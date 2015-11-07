@@ -48,7 +48,11 @@ class Parser:
 
 
     def parse_makefile(self):
-        for line in fileinput.input():
+        while True :
+            line = fileinput.input().readline()
+            # EOF reached
+            if not line:
+                break
             line = line.strip()
             if not line.startswith(_TARGET_START_LINE):
                 continue
@@ -56,6 +60,30 @@ class Parser:
             child_task = self._get_task_from_target(target)
             self._root_task.dependencies.add(child_task)
             _build_dependencies_tree(child_task)
+
+    
+    def sort_tasks(self):
+        pass
+
+
+    def dependencies_tree_to_dot(self):
+        str_out = 'digraph G {'
+        # build vertex
+        for task in self._target_to_task.values():
+            str_out += task.get_debug_node()
+            str_out += '[label=\"]'
+            str_out += task.target
+            str_out += ('red' if task.state == State.MUST_REMAKE else 'green')
+            str_out += '\"];'
+        # build edges
+        for task in self._target_to_task.values():
+            for child_task in task.dependencies:
+                str_out += child_task.get_debug_node()
+                str_out += ' -> '
+                str_out += task.get_debug_node()
+                str_out += ';'
+        str_out += '}'
+        return str_out
 
     def _get_task_from_target(self, target):
         if target in self._target_to_task:
@@ -68,9 +96,12 @@ class Parser:
             return task
 
     def _build_dependencies_tree(current_task_node):
-        for line in fileinput.input():
+        while True:
+            line = fileinput.input().readline()
+            # EOF reached
+            if not line:
+                break
             line = line.strip()
-
             if line.startswith(_TARGET_START_LINE):
                 target = _extract_target_name(line)
                 child_task = self._get_task_from_target(target)
@@ -100,17 +131,11 @@ class Parser:
         # Not well-formed Makefile
         raise ParseError(current_task_node.target)
 
-    def sort_tasks(self):
-        pass
 
-    def dependencies_tree_to_dot(self):
-        pass
-        
-
-def _extract_target_name(line):
-    start_index = line.find(_TARGET_START) + 1
-    end_index = line.find(_TARGET_END)
-    return line[start_index : end_index]
+    def _extract_target_name(line):
+        start_index = line.find(_TARGET_START) + 1
+        end_index = line.find(_TARGET_END)
+        return line[start_index : end_index]
 
 
 

@@ -144,3 +144,8 @@ class Parser:
 
 # class TaskCluster:
     
+if __name__ == '__main__' :
+    parser = Parser()
+    parser.parse_makefile()
+    str_out = parser.dependencies_tree_to_dot()
+    print str_out

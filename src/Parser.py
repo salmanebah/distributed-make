@@ -96,33 +96,33 @@ class Parser:
             self._target_to_task[target] = task
             return task
 
-    def _build_dependencies_tree(current_task_node):
+    def _build_dependencies_tree(self, current_task_node):
         while True:
-            line = fileinput.input().readline()
+            line = sys.stdin.readline()
             # EOF reached
             if not line:
                 break
             line = line.strip()
-            if line.startswith(_TARGET_START_LINE):
-                target = _extract_target_name(line)
+            if line.startswith(Parser._TARGET_START_LINE):
+                target = Parser._extract_target_name(line)
                 child_task = self._get_task_from_target(target)
                 current_task_node.dependencies.add(child_task)
-                _build_dependencies_tree(child_task)
+                self._build_dependencies_tree(child_task)
 
-            elif line.startswith(_TARGET_REMAKE_LINE):
-                target = _extract_target_name(line)
+            elif line.startswith(Parser._TARGET_REMAKE_LINE):
+                target = Parser._extract_target_name(line)
                 child_task = self._get_task_from_target(target)
-                command = fileinput.input().readline()
+                command = sys.stdin.readline()
                 child_task.state = State.MUST_REMAKE
                 child_task.command = command
 
-            elif line.startswith(_TARGET_PRUNE_LINE):
-                target = _extract_target_name(line)
+            elif line.startswith(Parser._TARGET_PRUNE_LINE):
+                target = Parser._extract_target_name(line)
                 child_task = self._get_task_from_target(target)
                 current_task_node.dependencies.add(child_task)
 
-            elif line.startswith(_TARGET_END_LINE):
-                end_target = _extract_target_name(line)
+            elif line.startswith(Parser._TARGET_END_LINE):
+                end_target = Parser._extract_target_name(line)
                 if end_target != current_task_node.target:
                     raise ParseError('expected ' +
                                      current_task_node.target +
@@ -132,10 +132,10 @@ class Parser:
         # Not well-formed Makefile
         raise ParseError(current_task_node.target)
 
-
+    @staticmethod
     def _extract_target_name(line):
-        start_index = line.find(_TARGET_START) + 1
-        end_index = line.find(_TARGET_END)
+        start_index = line.find(Parser._TARGET_START) + 1
+        end_index = line.find(Parser._TARGET_END)
         return line[start_index : end_index]
 
 

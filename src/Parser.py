@@ -63,15 +63,42 @@ class Parser:
         else:
             debug_id = len(self._target_to_task) + 1
             task = Task(debug_id)
+            task.target = target
             self._target_to_task[target] = task
             return task
 
     def _build_dependencies_tree(current_task_node):
         for line in fileinput.input():
-            trimed = line.strip()
-        
-    def parse_makefile(self):
-        pass
+            line = line.strip()
+
+            if line.startswith(_TARGET_START_LINE):
+                target = _extract_target_name(line)
+                child_task = self._get_task_from_target(target)
+                current_task_node.dependencies.add(child_task)
+                _build_dependencies_tree(child_task)
+
+            elif line.startswith(_TARGET_REMAKE_LINE):
+                target = _extract_target_name(line)
+                child_task = self._get_task_from_target(target)
+                command = fileinput.input().readline()
+                child_task.state = State.MUST_REMAKE
+                child_task.command = command
+
+            elif line.startswith(_TARGET_PRUNE_LINE):
+                target = _extract_target_name(line)
+                child_task = self._get_task_from_target(target)
+                current_task_node.dependencies.add(child_task)
+
+            elif line.startswith(_TARGET_END_LINE):
+                end_target = _extract_target_name(line)
+                if end_target != current_task_node.target:
+                    raise ParseError('expected ' +
+                                     current_task_node.target +
+                                     ' got ' + line)
+                # If the makefile is well-formed, we must finish by here
+                return
+        # Not well-formed Makefile
+        raise ParseError(current_task_node.target)
 
     def sort_tasks(self):
         pass

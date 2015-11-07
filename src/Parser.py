@@ -67,21 +67,22 @@ class Parser:
 
 
     def dependencies_tree_to_dot(self):
-        str_out = 'digraph G {'
+        str_out = 'digraph G {\n'
         # build vertex
         for task in self._target_to_task.values():
             str_out += task.get_debug_node()
-            str_out += '[label=\"]'
+            str_out += '[label=\"'
             str_out += task.target
+            str_out += '\" color=\"'
             str_out += ('red' if task.state == State.MUST_REMAKE else 'green')
-            str_out += '\"];'
+            str_out += '\"];\n'
         # build edges
         for task in self._target_to_task.values():
             for child_task in task.dependencies:
                 str_out += child_task.get_debug_node()
                 str_out += ' -> '
                 str_out += task.get_debug_node()
-                str_out += ';'
+                str_out += ';\n'
         str_out += '}'
         return str_out
 

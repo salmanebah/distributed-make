@@ -26,7 +26,8 @@ class Task:
         return self.target.__hash__()
 
     def __eq__(self, other):
-        return (isinstance(other, self.__class_)) and self.target == other.target
+        return (isinstance(other, self.__class__)) \
+               and self.target == other.target
 
     def __ne__(self, other):
         return not self.__eq__(other)

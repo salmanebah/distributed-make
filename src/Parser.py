@@ -2,6 +2,7 @@ import sys
 from subprocess import Popen, PIPE, STDOUT
 
 # add logging 
+from subprocess import Popen, PIPE, STDOUT
 
 class State:
     MUST_REMAKE = 0

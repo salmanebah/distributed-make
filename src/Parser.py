@@ -49,7 +49,7 @@ class Parser:
 
 
     def parse_makefile(self):
-        while True :
+        while True:
             line = sys.stdin.readline()
             # EOF reached
             if not line:
@@ -64,6 +64,7 @@ class Parser:
     
     def sort_tasks(self):
         topological_list = []
+        # dependencies[0] is always Makefile so we ignore it
         first_task = self._root_task.dependencies[1]
         for dependent_task in first_task.dependencies:
            Parser._sort_tasks_aux(dependent_task, topological_list)
@@ -74,12 +75,15 @@ class Parser:
     def _sort_tasks_aux(current_task_node, topological_list):
         # a task without dependency
         if not current_task_node.dependencies:
-            topological_list.append(current_task_node)
+            # the first time we visit the leaf
+            if not current_task_node in topological_list:
+                topological_list.append(current_task_node)
         else:
             for dependent_task in current_task_node.dependencies:
                 Parser._sort_tasks_aux(dependent_task, topological_list)
-            topological_list.append(current_task_node)
-        
+            # the first time we visit the node
+            if not current_task_node in topological_list:
+                topological_list.append(current_task_node)
 
     def dependencies_tree_to_dot(self):
         str_out = 'digraph G {\n'

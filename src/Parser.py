@@ -1,4 +1,5 @@
 import sys
+from subprocess import Popen, PIPE, STDOUT
 
 
 class State:
@@ -19,8 +20,17 @@ class Task:
         self.target = None
         self.dependencies = set()
         self.command = None
+        self.output = None
         self.state = State.WAITING
         self._id = debug_id # for debugging purpose
+
+    def __call__(self):
+        """
+        Launches the command in a subprocess
+        """
+        proc = Popen(self.command.split(), stdout=PIPE, stderr=STDOUT)
+        self.output = proc.communicate()[0]
+        self.state = State.DONE
 
     def __hash__(self):
         return self.target.__hash__()

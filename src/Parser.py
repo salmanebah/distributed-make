@@ -1,5 +1,5 @@
 import sys
-
+# add logging 
 
 class State:
     MUST_REMAKE = 0
@@ -17,7 +17,7 @@ class Task:
 
     def __init__(self, debug_id = -1):
         self.target = None
-        self.dependencies = set()
+        self.dependencies = []
         self.command = None
         self.state = State.WAITING
         self._id = debug_id # for debugging purpose
@@ -58,13 +58,27 @@ class Parser:
                 continue
             target = Parser._extract_target_name(line)
             child_task = self._get_task_from_target(target)
-            self._root_task.dependencies.add(child_task)
+            self._root_task.dependencies.append(child_task)
             self._build_dependencies_tree(child_task)
-
     
     def sort_tasks(self):
-        pass
+        topological_list = []
+        first_task = self._root_task.dependencies[1]
+        for dependent_task in first_task.dependencies:
+           Parser._sort_tasks_aux(dependent_task, topological_list)
+        topological_list.append(first_task)
+        return topological_list
 
+    @staticmethod
+    def _sort_tasks_aux(current_task_node, topological_list):
+        # a task without dependency
+        if not current_task_node.dependencies:
+            topological_list.append(current_task_node)
+        else:
+            for dependent_task in current_task_node.dependencies:
+                Parser._sort_tasks_aux(dependent_task, topological_list)
+            topological_list.append(current_task_node)
+        
 
     def dependencies_tree_to_dot(self):
         str_out = 'digraph G {\n'
@@ -106,7 +120,7 @@ class Parser:
             if line.startswith(Parser._TARGET_START_LINE):
                 target = Parser._extract_target_name(line)
                 child_task = self._get_task_from_target(target)
-                current_task_node.dependencies.add(child_task)
+                current_task_node.dependencies.append(child_task)
                 self._build_dependencies_tree(child_task)
 
             elif line.startswith(Parser._TARGET_REMAKE_LINE):
@@ -119,7 +133,7 @@ class Parser:
             elif line.startswith(Parser._TARGET_PRUNE_LINE):
                 target = Parser._extract_target_name(line)
                 child_task = self._get_task_from_target(target)
-                current_task_node.dependencies.add(child_task)
+                current_task_node.dependencies.append(child_task)
 
             elif line.startswith(Parser._TARGET_END_LINE):
                 end_target = Parser._extract_target_name(line)
@@ -144,8 +158,12 @@ class Parser:
 
 # class TaskCluster:
     
-if __name__ == '__main__' :
+if __name__ == '__main__':
     parser = Parser()
     parser.parse_makefile()
     str_out = parser.dependencies_tree_to_dot()
     print str_out
+    print len(parser._root_task.dependencies)
+    topological_list = parser.sort_tasks()
+    for task in topological_list:
+        print '%s->' %task.target,

@@ -6,15 +6,6 @@ and sort the tasks of the different targets in a Makefile.
 import sys
 # add logging
 
-class State(object):
-    """
-    Different states of a task.
-    """
-    MUST_REMAKE = 0
-    DONE = 1
-    WAITING = 2
-
-
 class ParseError(Exception):
     """
     Exception to signal an error during Makefiles parsing.
@@ -38,7 +29,7 @@ class Task(object):
         self.target = None
         self.dependencies = []
         self.command = None
-        self.state = State.WAITING
+        self.executed = False
         self._id = debug_id # for debugging purpose
 
     def __hash__(self):
@@ -50,6 +41,10 @@ class Task(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __str__(self):
+        return '<' + self.target + ',' + self.command + ', ' \
+               + self.dependencies + '>'
 
     def get_debug_node(self):
         """Returns the node associated with the task."""
@@ -64,43 +59,49 @@ class Parser(object):
       target name
       _root_task(Task): default task reprensenting the root of all the tasks
     """
-    _TARGET_START = '`'
-    _TARGET_END = '\''
-    _TARGET_START_LINE = 'Considering target file'
-    _TARGET_REMAKE_LINE = 'Must remake target '
-    _TARGET_PRUNE_LINE = 'Pruning file '
-    _TARGET_END_LINE = 'Finished prerequisites of target file '
-
     def __init__(self):
         self._target_to_task = {}
         self._root_task = self._get_task_from_target('[ROOT]')
 
 
     def parse_makefile(self):
-        """Parse the Makefile and Builds the tasks DAG.
-        """
-        while True:
-            line = sys.stdin.readline()
-            # EOF reached
-            if not line:
-                break
-            line = line.strip()
-            if not line.startswith(Parser._TARGET_START_LINE):
-                continue
-            target = Parser._extract_target_name(line)
-            child_task = self._get_task_from_target(target)
-            self._root_task.dependencies.append(child_task)
-            self._build_dependencies_tree(child_task)
+        """Parse the Makefile and Builds the tasks DAG."""
+        makefile_lines = sys.stdin.readlines()
+        makefile_lines = [line for line in makefile_lines if line != '\n']
+        for index in range(0, len(makefile_lines), 2):
+            current_line = makefile_lines[index]
+            current_recipe = current_line.split(':')
+            current_target = current_recipe[0].strip()
+            if not current_target:
+                raise ParseError('No target specified on line ' + current_line)
+            dependencies = current_recipe[1].strip()
+            current_task = self._get_task_from_target(current_target)
+            # first target has _root_task as parent
+            if index == 0:
+                self._root_task.dependencies.append(current_task)
+            for dependency in dependencies.split():
+                dependency_task = self._get_task_from_target(dependency)
+                current_task.dependencies.append(dependency_task)
+            # get the command
+            cmd = makefile_lines[index + 1]
+            if not cmd.startswith('\t'):
+                raise ParseError('No command specified for target '
+                                 + current_target)
+            current_task.command = cmd.strip('\t')
 
     def sort_tasks(self):
-        """Sort topologically the tasks DAG.
-        """
+        """Sort topologically the tasks DAG."""
         topological_list = []
-        # dependencies[0] is always Makefile so we ignore it
-        first_task = self._root_task.dependencies[1]
+        # Only one task as dependency for root
+        first_task = self._root_task.dependencies[0]
         for dependent_task in first_task.dependencies:
             Parser._sort_tasks_aux(dependent_task, topological_list)
         topological_list.append(first_task)
+        # add all tasks which no other task depends on
+        for independant_task in self._target_to_task.values():
+            if independant_task not in topological_list and \
+               independant_task != self._root_task:
+                topological_list.insert(0, independant_task)
         return topological_list
 
     @staticmethod
@@ -125,14 +126,18 @@ class Parser(object):
         str_out = 'digraph G {\n'
         # build vertex
         for task in self._target_to_task.values():
+            if task == self._root_task:
+                continue
             str_out += task.get_debug_node()
             str_out += '[label=\"'
             str_out += task.target
             str_out += '\" color=\"'
-            str_out += ('red' if task.state == State.MUST_REMAKE else 'green')
+            str_out += 'green'
             str_out += '\"];\n'
         # build edges
         for task in self._target_to_task.values():
+            if task == self._root_task:
+                continue
             for child_task in task.dependencies:
                 str_out += child_task.get_debug_node()
                 str_out += ' -> '
@@ -154,54 +159,7 @@ class Parser(object):
             self._target_to_task[target] = task
             return task
 
-    def _build_dependencies_tree(self, current_task_node):
-        """Builds the DAG from the current task node.
-        """
-        while True:
-            line = sys.stdin.readline()
-            # EOF reached
-            if not line:
-                break
-            line = line.strip()
-            if line.startswith(Parser._TARGET_START_LINE):
-                target = Parser._extract_target_name(line)
-                child_task = self._get_task_from_target(target)
-                current_task_node.dependencies.append(child_task)
-                self._build_dependencies_tree(child_task)
 
-            elif line.startswith(Parser._TARGET_REMAKE_LINE):
-                target = Parser._extract_target_name(line)
-                child_task = self._get_task_from_target(target)
-                command = sys.stdin.readline()
-                child_task.state = State.MUST_REMAKE
-                child_task.command = command
-
-            elif line.startswith(Parser._TARGET_PRUNE_LINE):
-                target = Parser._extract_target_name(line)
-                child_task = self._get_task_from_target(target)
-                current_task_node.dependencies.append(child_task)
-
-            elif line.startswith(Parser._TARGET_END_LINE):
-                end_target = Parser._extract_target_name(line)
-                if end_target != current_task_node.target:
-                    raise ParseError('expected ' +
-                                     current_task_node.target +
-                                     ' got ' + line)
-                # If the makefile is well-formed, we must finish by here
-                return
-        # Not well-formed Makefile
-        raise ParseError(current_task_node.target)
-
-    @staticmethod
-    def _extract_target_name(line):
-        """Returns the target name from the line.
-        """
-        start_index = line.find(Parser._TARGET_START) + 1
-        end_index = line.find(Parser._TARGET_END)
-        return line[start_index : end_index]
-
-
-# class TaskCluster:
 def main():
     """Builds a topological sort of the tasks from the Makefile in stdin."""
     parser = Parser()
@@ -209,8 +167,9 @@ def main():
     str_out = parser.dependencies_tree_to_dot()
     print str_out
     topological_list = parser.sort_tasks()
-    for task in topological_list:
-        print '%s->' %task.target,
+    # for task in topological_list:
+    #     print '%s->' %task.target,
+    #     print '%s->' %task.command,
 
 if __name__ == '__main__':
     main()

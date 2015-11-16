@@ -62,15 +62,17 @@ class Parser(object):
       _target_to_task(dict(str, task)): dictionary to access tasks by
       target name
       _root_task(Task): default task reprensenting the root of all the tasks
+      _input_file(file): the input file to read from
     """
-    def __init__(self):
+    def __init__(self, input_file=sys.stdin):
         self._target_to_task = {}
         self._root_task = self._get_task_from_target('[ROOT]')
+        self._input_file = input_file
 
 
     def parse_makefile(self):
         """Parse the Makefile and Builds the tasks DAG."""
-        makefile_lines = sys.stdin.readlines()
+        makefile_lines = self._input_file.readlines()
         makefile_lines = [line for line in makefile_lines if line != '\n']
         for index in range(0, len(makefile_lines), 2):
             current_line = makefile_lines[index]

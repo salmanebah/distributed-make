@@ -44,7 +44,11 @@ class Task(object):
 
     def __str__(self):
         return '<' + self.target + ',' + self.command + ', ' \
-               + self.dependencies + '>'
+               + str(self.dependencies) + '>'
+
+    def is_file_dependency(self):
+        """Returns True if this task represents a file, False otherwise."""
+        return not self.dependencies and not self.command
 
     def get_debug_node(self):
         """Returns the node associated with the task."""

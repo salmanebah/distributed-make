@@ -173,9 +173,10 @@ def main():
     str_out = parser.dependencies_tree_to_dot()
     print str_out
     topological_list = parser.sort_tasks()
-    # for task in topological_list:
-    #     print '%s->' %task.target,
-    #     print '%s->' %task.command,
+    for task in topological_list:
+        if task.is_file_dependency():
+            print task.target
+
 
 if __name__ == '__main__':
     main()

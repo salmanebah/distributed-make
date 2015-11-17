@@ -40,17 +40,20 @@ class Task(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __str__(self):
-        return '<' + self.target + ',' + self.command + ', ' \
-               + str(self.dependencies) + '>'
-
     def is_file_dependency(self):
         """Returns True if this task represents a file, False otherwise."""
         return not self.dependencies and not self.command
 
-    def get_debug_node(self):
-        """Returns the node associated with the task."""
-        return "node" + str(self._id)
+    def get_dot_node(self):
+        """Returns the node name associated with this task."""
+        return "node" + str(self._node_id)
+
+    def all_dependencies_executed(self):
+        """Returns True if all dependencies have been executed,
+           False otherwise."""
+        return all((lambda dep: dep.executed == True)(curr_dep) \
+                   for curr_dep in self.dependencies)
+
 
 class Parser(object):
     """

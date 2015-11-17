@@ -10,9 +10,7 @@ class ParseError(Exception):
     """
     Exception to signal an error during Makefiles parsing.
     """
-    def __init__(self, msg):
-        super(ParseError, self).__init__()
-        self.msg = msg
+    pass
 
 class Task(object):
     """
@@ -25,12 +23,12 @@ class Task(object):
        state(State): current state of the task.
        _id(State): used only to generate the graph for dot.
     """
-    def __init__(self, debug_id=-1):
+    def __init__(self, node_id):
         self.target = None
         self.dependencies = []
         self.command = None
         self.executed = False
-        self._id = debug_id # for debugging purpose
+        self._node_id = node_id
 
     def __hash__(self):
         return self.target.__hash__()
@@ -62,17 +60,16 @@ class Parser(object):
       _target_to_task(dict(str, task)): dictionary to access tasks by
       target name
       _root_task(Task): default task reprensenting the root of all the tasks
-      _input_file(file): the input file to read from
     """
-    def __init__(self, input_file=sys.stdin):
+    def __init__(self):
         self._target_to_task = {}
         self._root_task = self._get_task_from_target('[ROOT]')
-        self._input_file = input_file
 
-
-    def parse_makefile(self):
-        """Parse the Makefile and Builds the tasks DAG."""
-        makefile_lines = self._input_file.readlines()
+    def parse_makefile(self, input_file=sys.stdin):
+        """Parses the Makefile and Builds the tasks DAG."""
+        self._root_task.dependencies = []
+        self._target_to_task = {'[ROOT]' : self._root_task}
+        makefile_lines = input_file.readlines()
         makefile_lines = [line for line in makefile_lines if line != '\n']
         for index in range(0, len(makefile_lines), 2):
             current_line = makefile_lines[index]
@@ -95,8 +92,8 @@ class Parser(object):
                                  + current_target)
             current_task.command = cmd.strip('\t')
 
-    def sort_tasks(self):
-        """Sort topologically the tasks DAG."""
+    def get_sorted_tasks(self):
+        """Returns the tasks sorted topologically."""
         topological_list = []
         # Only one task as dependency for root
         first_task = self._root_task.dependencies[0]
@@ -112,8 +109,7 @@ class Parser(object):
 
     @staticmethod
     def _sort_tasks_aux(current_task_node, topological_list):
-        """Sorts recursively the DAG with a postfix traversal.
-        """
+        """Sorts recursively the DAG with a postfix traversal."""
         # a task without dependency
         if not current_task_node.dependencies:
             # the first time we visit the leaf
@@ -127,14 +123,13 @@ class Parser(object):
                 topological_list.append(current_task_node)
 
     def dependencies_tree_to_dot(self):
-        """Builds a digraph of the DAG for dot.
-        """
+        """Builds a digraph of the DAG for dot."""
         str_out = 'digraph G {\n'
         # build vertex
         for task in self._target_to_task.values():
             if task == self._root_task:
                 continue
-            str_out += task.get_debug_node()
+            str_out += task.get_dot_node()
             str_out += '[label=\"'
             str_out += task.target
             str_out += '\" color=\"'
@@ -145,9 +140,9 @@ class Parser(object):
             if task == self._root_task:
                 continue
             for child_task in task.dependencies:
-                str_out += child_task.get_debug_node()
+                str_out += child_task.get_dot_node()
                 str_out += ' -> '
-                str_out += task.get_debug_node()
+                str_out += task.get_dot_node()
                 str_out += ';\n'
         str_out += '}'
         return str_out
@@ -159,24 +154,27 @@ class Parser(object):
         if target in self._target_to_task:
             return self._target_to_task[target]
         else:
-            debug_id = len(self._target_to_task) + 1
-            task = Task(debug_id)
+            node_id = len(self._target_to_task) + 1
+            task = Task(node_id)
             task.target = target
             self._target_to_task[target] = task
             return task
 
 
 def main():
-    """Builds a topological sort of the tasks from the Makefile in stdin."""
+    """Reads two makefiles from stdin and prints file dependencies for the first
+       and topological sort for the second."""
     parser = Parser()
     parser.parse_makefile()
-    str_out = parser.dependencies_tree_to_dot()
-    print str_out
-    topological_list = parser.sort_tasks()
+    topological_list = parser.get_sorted_tasks()
     for task in topological_list:
         if task.is_file_dependency():
             print task.target
 
+    parser.parse_makefile()
+    topological_list = parser.get_sorted_tasks()
+    for task in topological_list:
+        print '%s->' %task.target,
 
 if __name__ == '__main__':
     main()

@@ -98,6 +98,9 @@ class Parser(object):
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""
         topological_list = []
+        # if _root_task has no dependency, the parsed Makefile was empty
+        if not self._root_task.dependencies:
+            return topological_list
         # Only one task as dependency for root
         first_task = self._root_task.dependencies[0]
         for dependent_task in first_task.dependencies:

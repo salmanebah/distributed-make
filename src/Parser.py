@@ -73,8 +73,8 @@ class Parser(object):
         self._root_task.dependencies = []
         self._target_to_task = {'[ROOT]' : self._root_task}
         makefile_lines = input_file.readlines()
-        makefile_lines = [line for line in makefile_lines if line != '\n']
-        for index in range(0, len(makefile_lines), 2):
+        makefile_lines = [line for line in makefile_lines
+                          if not (line == '\n' or line.startswith('#'))]
             current_line = makefile_lines[index]
             current_recipe = current_line.split(':')
             current_target = current_recipe[0].strip()

@@ -75,6 +75,8 @@ class Parser(object):
         makefile_lines = input_file.readlines()
         makefile_lines = [line for line in makefile_lines
                           if not (line == '\n' or line.startswith('#'))]
+        index = 0
+        while index < len(makefile_lines):
             current_line = makefile_lines[index]
             current_recipe = current_line.split(':')
             current_target = current_recipe[0].strip()

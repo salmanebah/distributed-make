@@ -90,12 +90,15 @@ class Parser(object):
             for dependency in dependencies.split():
                 dependency_task = self._get_task_from_target(dependency)
                 current_task.dependencies.append(dependency_task)
+            # go for the next line
+            index += 1
+            if index >= len(makefile_lines):
+                break
             # get the command
-            cmd = makefile_lines[index + 1]
-            if not cmd.startswith('\t'):
-                raise ParseError('No command specified for target '
-                                 + current_target)
-            current_task.command = cmd.strip('\t')
+            cmd = makefile_lines[index]
+            if cmd.startswith('\t'):
+                current_task.command = cmd.strip('\t')
+                index += 1
 
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""

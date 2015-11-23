@@ -133,7 +133,7 @@ class Parser(object):
             if not current_task_node in topological_list:
                 topological_list.append(current_task_node)
 
-    def dependencies_tree_to_dot(self):
+    def get_dot_dependencies_tree(self):
         """Builds a digraph of the DAG for dot."""
         str_out = 'digraph G {\n'
         # build vertex
@@ -173,19 +173,11 @@ class Parser(object):
 
 
 def main():
-    """Reads two makefiles from stdin and prints file dependencies for the first
-       and topological sort for the second."""
+    """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    topological_list = parser.get_sorted_tasks()
-    for task in topological_list:
-        if task.is_file_dependency():
-            print task.target
-
-    parser.parse_makefile()
-    topological_list = parser.get_sorted_tasks()
-    for task in topological_list:
-        print '%s->' %task.target,
+    dot = parser.get_dot_dependencies_tree()
+    print dot
 
 if __name__ == '__main__':
     main()

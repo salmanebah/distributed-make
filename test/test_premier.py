@@ -12,7 +12,7 @@ from Parser import Parser
 
 class PremierTestCase(unittest.TestCase):
     """
-    Test case for Makefile.
+    Test case for Makefile in makefiles/premier.
     """
     def setUp(self):
         """Setup the test case."""
@@ -63,11 +63,25 @@ class PremierTestCase(unittest.TestCase):
                              task.dependencies[0].target == 'premier') \
                             (curr_task) \
                             for curr_task in list_tasks
-                            if re.match('list[1-9]+\.txt', curr_task.target)))
-        # check that all list[1..20].txt targets have command
+                            if re.match('list[0-9]+\.txt', curr_task.target)))
+        # check that all list[1..20]*.txt targets have command
         # starting with ./premier
         self.assertTrue(all((lambda task:
                              task.command.startswith('./premier')) \
                             (curr_task) \
                             for curr_task in list_tasks
-                            if re.match('list[1-9]+\.txt', curr_task.target)))
+                            if re.match('list[0-9]+\.txt', curr_task.target)))
+
+    def test_all_targets(self):
+        """ Test that all targets are either premier or
+            list.txt or list[1..20].txt. """
+        parser = Parser()
+        parser.parse_makefile(self.makefile)
+        tasks = parser.get_sorted_tasks()
+        target_names = [task.target for task in tasks
+                        if not task.is_file_dependency()]
+        self.assertEquals(len(target_names), 22)
+        self.assertTrue(all((lambda name:
+                             name == 'premier'
+                             or re.match('list[0-9]*\.txt', name)) \
+                            (curr_name) for curr_name in target_names))

@@ -97,7 +97,7 @@ class Parser(object):
             # get the command
             cmd = makefile_lines[index]
             if cmd.startswith('\t'):
-                current_task.command = cmd.strip('\t')
+                current_task.command = cmd.lstrip('\t').rstrip('\n')
                 index += 1
 
     def get_sorted_tasks(self):

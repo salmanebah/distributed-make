@@ -132,22 +132,47 @@ class Parser(object):
         # Only one task as dependency for root
         LOGGER.info('Getting the first task')
         first_task = self._root_task.dependencies[0]
-        LOGGER.info('Start sorting dependencies for the first task: %s',
+        LOGGER.info('Starting dependencies sort for the first task: %s',
                     first_task.target)
         for dependent_task in first_task.dependencies:
-            LOGGER.info('Sorting dependencies for %s', dependent_task.target)
+            LOGGER.info('Starting dependencies sort for %s',
+                        dependent_task.target)
             Parser._sort_tasks_aux(dependent_task, topological_list)
-        LOGGER.info('End sorting dependencies for the first task')
+            LOGGER.info('Finishing dependencies sort for %s',
+                        dependent_task.target)
+        LOGGER.info('Finishing dependencies sort  for the first task: %s',
+                    first_task.target)
         LOGGER.info('Adding the first task %s in the sorted list',
                     first_task.target)
         topological_list.append(first_task)
         # add all tasks which no other task depends on
-        LOGGER.info('Adding file dependencies (if any)')
-        for independant_task in self._target_to_task.values():
-            if independant_task not in topological_list and \
-               independant_task != self._root_task:
-                topological_list.insert(0, independant_task)
+        for independent_task in self._target_to_task.values():
+            if independent_task not in topological_list and \
+               independent_task != self._root_task:
+                LOGGER.info('Adding independent task %s '
+                            + 'in the sorted list', independent_task.target)
+                Parser._add_independent_task(independent_task, topological_list)
         return topological_list
+
+    @staticmethod
+    def _add_independent_task(task, topological_list):
+        """ Add independent task in the topological list."""
+        LOGGER.info('Starting _add_independent_task for %s', task.target)
+        if task in topological_list:
+            LOGGER.info('Task %s already in the list', task.target)
+            LOGGER.info('Finishing _add_independent_task for %s', task.target)
+            return
+        if not task.dependencies:
+            LOGGER.info('No dependency for %s adding it in the list', task.target)
+            topological_list.append(task)
+        else:
+            LOGGER.info('Task %s has dependencies, adding them first',
+                        task.target)
+            for dependent_task in task.dependencies:
+                Parser._add_independent_task(dependent_task, topological_list)
+            LOGGER.info('Adding Task %s in the list', task.target)
+            topological_list.append(task)
+        LOGGER.info('Finishing _add_independent_task for %s', task.target)
 
     @staticmethod
     def _sort_tasks_aux(current_task_node, topological_list):

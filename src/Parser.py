@@ -4,7 +4,10 @@ and sort the tasks of the different targets in a Makefile.
 """
 
 import sys
-# add logging
+import logging
+import logging.config
+
+LOGGER = logging.getLogger(__name__)
 
 class ParseError(Exception):
     """
@@ -65,53 +68,81 @@ class Parser(object):
       _root_task(Task): default task reprensenting the root of all the tasks
     """
     def __init__(self):
+        LOGGER.debug('Creating Makefile parser')
         self._target_to_task = {}
+        LOGGER.debug('Adding default [ROOT] target')
         self._root_task = self._get_task_from_target('[ROOT]')
 
     def parse_makefile(self, input_file=sys.stdin):
         """Parses the Makefile and Builds the tasks DAG."""
+        LOGGER.debug('Parsing Makefile from %s', input_file.name)
+        LOGGER.debug('Reinitializing Parser states')
         self._root_task.dependencies = []
         self._target_to_task = {'[ROOT]' : self._root_task}
+        LOGGER.info('Reading Makefile')
         makefile_lines = input_file.readlines()
+        LOGGER.info('Discarding empty lines and comment lines')
         makefile_lines = [line for line in makefile_lines
                           if not (line == '\n' or line.startswith('#'))]
         index = 0
         while index < len(makefile_lines):
             current_line = makefile_lines[index]
+            LOGGER.info('Analyzing %s', current_line)
             current_recipe = current_line.split(':')
             current_target = current_recipe[0].strip()
             if not current_target:
+                LOGGER.error('No target found on %s', current_line)
                 raise ParseError('No target specified on line ' + current_line)
             dependencies = current_recipe[1].strip()
+            LOGGER.info('Creating task for target %s', current_target)
             current_task = self._get_task_from_target(current_target)
             # first target has _root_task as parent
             if index == 0:
+                LOGGER.info('Adding first target %s as child of %s',
+                            current_target, '[ROOT]')
                 self._root_task.dependencies.append(current_task)
             for dependency in dependencies.split():
+                LOGGER.info('Creating dependency task %s', dependency)
                 dependency_task = self._get_task_from_target(dependency)
+                LOGGER.info('Adding dependency %s for target %s',
+                            dependency, current_target)
                 current_task.dependencies.append(dependency_task)
             # go for the next line
             index += 1
             if index >= len(makefile_lines):
+                LOGGER.info('Finishing Makefile parsing')
                 break
             # get the command
             cmd = makefile_lines[index]
             if cmd.startswith('\t'):
-                current_task.command = cmd.lstrip('\t').rstrip('\n')
+                cmd = cmd.lstrip('\t').rstrip('\n')
+                LOGGER.info('Adding command %s for target %s',
+                            cmd, current_target)
+                current_task.command = cmd
                 index += 1
 
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""
+        LOGGER.info('Sorting tasks topologically')
         topological_list = []
         # if _root_task has no dependency, the parsed Makefile was empty
         if not self._root_task.dependencies:
+            LOGGER.info('Finishing the sorting, empty Makefile')
             return topological_list
         # Only one task as dependency for root
+        LOGGER.info('Getting the first task')
         first_task = self._root_task.dependencies[0]
+        LOGGER.info('Start sorting dependencies for the first task: %s',
+                    first_task.target)
         for dependent_task in first_task.dependencies:
+            LOGGER.info('Sorting dependencies for %s', dependent_task.target)
             Parser._sort_tasks_aux(dependent_task, topological_list)
+        LOGGER.info('End sorting dependencies for the first task')
+        LOGGER.info('Adding the first task %s in the sorted list',
+                    first_task.target)
         topological_list.append(first_task)
         # add all tasks which no other task depends on
+        LOGGER.info('Adding file dependencies (if any)')
         for independant_task in self._target_to_task.values():
             if independant_task not in topological_list and \
                independant_task != self._root_task:
@@ -176,8 +207,10 @@ def main():
     """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    dot = parser.get_dot_dependencies_tree()
-    print dot
+    #dot = parser.get_dot_dependencies_tree()
+    #print dot
+    sorted_tasks = parser.get_sorted_tasks()
 
 if __name__ == '__main__':
+    logging.config.fileConfig('logging.ini', disable_existing_loggers=False)
     main()

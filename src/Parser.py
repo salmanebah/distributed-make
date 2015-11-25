@@ -207,9 +207,9 @@ def main():
     """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    #dot = parser.get_dot_dependencies_tree()
-    #print dot
     sorted_tasks = parser.get_sorted_tasks()
+    for task in sorted_tasks:
+        print '%s->' %task.target,
 
 if __name__ == '__main__':
     logging.config.fileConfig('logging.ini', disable_existing_loggers=False)

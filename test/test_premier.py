@@ -29,8 +29,6 @@ class PremierTestCase(unittest.TestCase):
         tasks = parser.get_sorted_tasks()
         target_task = [task for task in tasks if task.target == 'premier']
         self.assertIsNotNone(target_task)
-        #targets = [task.target for task in tasks]
-        #self.assertTrue('premier' in targets)
 
     def test_premier_valid_command(self):
         """ Test that the command in the premier target is valid."""

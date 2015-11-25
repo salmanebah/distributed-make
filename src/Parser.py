@@ -73,8 +73,10 @@ class Parser(object):
         self._root_task.dependencies = []
         self._target_to_task = {'[ROOT]' : self._root_task}
         makefile_lines = input_file.readlines()
-        makefile_lines = [line for line in makefile_lines if line != '\n']
-        for index in range(0, len(makefile_lines), 2):
+        makefile_lines = [line for line in makefile_lines
+                          if not (line == '\n' or line.startswith('#'))]
+        index = 0
+        while index < len(makefile_lines):
             current_line = makefile_lines[index]
             current_recipe = current_line.split(':')
             current_target = current_recipe[0].strip()
@@ -88,12 +90,15 @@ class Parser(object):
             for dependency in dependencies.split():
                 dependency_task = self._get_task_from_target(dependency)
                 current_task.dependencies.append(dependency_task)
+            # go for the next line
+            index += 1
+            if index >= len(makefile_lines):
+                break
             # get the command
-            cmd = makefile_lines[index + 1]
-            if not cmd.startswith('\t'):
-                raise ParseError('No command specified for target '
-                                 + current_target)
-            current_task.command = cmd.strip('\t')
+            cmd = makefile_lines[index]
+            if cmd.startswith('\t'):
+                current_task.command = cmd.strip('\t')
+                index += 1
 
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""
@@ -128,7 +133,7 @@ class Parser(object):
             if not current_task_node in topological_list:
                 topological_list.append(current_task_node)
 
-    def dependencies_tree_to_dot(self):
+    def get_dot_dependencies_tree(self):
         """Builds a digraph of the DAG for dot."""
         str_out = 'digraph G {\n'
         # build vertex
@@ -168,19 +173,11 @@ class Parser(object):
 
 
 def main():
-    """Reads two makefiles from stdin and prints file dependencies for the first
-       and topological sort for the second."""
+    """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    topological_list = parser.get_sorted_tasks()
-    for task in topological_list:
-        if task.is_file_dependency():
-            print task.target
-
-    parser.parse_makefile()
-    topological_list = parser.get_sorted_tasks()
-    for task in topological_list:
-        print '%s->' %task.target,
+    dot = parser.get_dot_dependencies_tree()
+    print dot
 
 if __name__ == '__main__':
     main()

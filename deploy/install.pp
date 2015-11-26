@@ -1,11 +1,4 @@
-# python 2.7
-# pip
-# celery
-# start celery exec on workers
-# start worker.py on workers
-# start master and listener on master
-# use a service to start celery on worker
-# put celery bin in /etc/init.d/celery before
+# start celery as service on worker nodes
 
 package { 'python':
   ensure => present,
@@ -20,7 +13,29 @@ package { 'pip':
 
 exec { 'celery':
   cwd     => '/tmp',
-  command => 'pip install celery',
+  command => 'pip install -U celery[redis]',
   require => Package['pip'],
   path    => ['/usr/bin', 'usr/local/bin']
+}
+
+package {'rabbitmq':
+  ensure => present,
+  name   => 'rabbitmq-server',
+}
+
+package {'redis':
+  ensure => present,
+  name   => 'redis-server'
+}
+
+service { 'rabbitmq-service':
+  ensure  => running,
+  name    => 'rabbitmq-server',
+  require => Package['rabbitmq']
+}
+
+service { 'redis-service':
+  ensure  => running,
+  name    => 'redis-server',
+  require => Package['redis-server']
 }

@@ -148,6 +148,12 @@ class Parser(object):
                             cmd, current_target)
                 current_task.command = cmd
                 index += 1
+        LOGGER.info('Checking for cyclic targets')
+        for task in self._target_to_task.values():
+            if Parser._is_cyclically_dependent(task):
+                LOGGER.error('Cyclic target %s detected', task.target)
+                raise ParseError('Cyclic target ' + task.target + ' detected')
+
 
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""
@@ -181,6 +187,19 @@ class Parser(object):
                             + 'in the sorted list', independent_task.target)
                 Parser._add_independent_task(independent_task, topological_list)
         return topological_list
+
+    @staticmethod
+    def _is_cyclically_dependent(task):
+        """Returns True if task have dependency that depends on it,
+           False otherwise. Check only for simple cyclic dependency."""
+        if not task.dependencies:
+            return False
+        if task in task.dependencies:
+            return True
+        for dependency in task.dependencies:
+            if task in dependency.dependencies:
+                return True
+        return False
 
     @staticmethod
     def _add_independent_task(task, topological_list):

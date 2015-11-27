@@ -154,6 +154,13 @@ class Parser(object):
                 LOGGER.error('Cyclic target %s detected', task.target)
                 raise ParseError('Cyclic target ' + task.target + ' detected')
 
+    def get_default_task(self):
+        """Returns the first task in the Makefile."""
+        LOGGER.info('Getting the default task')
+        if not self._root_task.dependencies:
+            LOGGER.warn('No default task, empty Makefile')
+            return None
+        return self._root_task.dependencies[0]
 
     def get_sorted_tasks(self):
         """Returns the tasks sorted topologically."""

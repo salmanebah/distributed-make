@@ -93,10 +93,21 @@ class Parser(object):
         LOGGER.info('Discarding empty lines and comment lines')
         makefile_lines = [line for line in makefile_lines
                           if not (line == '\n' or line.startswith('#'))]
+        if len(makefile_lines) == 0:
+            LOGGER.error('Empty Makefile')
+            raise ParseError('Empty Makefile')
         index = 0
         while index < len(makefile_lines):
             current_line = makefile_lines[index]
             LOGGER.info('Analyzing %s', current_line)
+            if ':' not in current_line:
+                LOGGER.error('Missing : separator on line: %s', current_line)
+                raise ParseError('Missing : separator on line: ' + current_line)
+            if current_line.startswith('\t'):
+                LOGGER.error('Expected target, found command on line: %s',
+                             current_line)
+                raise ParseError('Expected target, found command on line '
+                                 + current_line)
             current_recipe = current_line.split(':')
             current_target = current_recipe[0].strip()
             if not current_target:

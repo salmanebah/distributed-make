@@ -27,16 +27,11 @@ class Task(object):
         self.target = None
         self.dependencies = []
         self.command = None
-        self.executed = False
+        self.children = []
         self._node_id = node_id
 
-    def __call__(self):
-        """
-        Launches the command in a subprocess
-        """
-        proc = Popen(self.command.split(), stdout=PIPE, stderr=STDOUT)
-        self.output = proc.communicate()[0]
-        self.state = State.DONE
+    def __repr__(self):
+        return self.target
 
     def __hash__(self):
         return self.target.__hash__()

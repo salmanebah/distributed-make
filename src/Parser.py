@@ -65,20 +65,29 @@ class Parser(object):
     Attributes:
       _target_to_task(dict(str, task)): dictionary to access tasks by
       target name
-      _root_task(Task): default task reprensenting the root of all the tasks
+      _root_task(Task): default task reprensenting the root of all
+      reachable the tasks
+      _targets(set(str)): a set of makefile targets used to detect
+      double target declarations
     """
     def __init__(self):
         LOGGER.debug('Creating Makefile parser')
         self._target_to_task = {}
         LOGGER.debug('Adding default [ROOT] target')
         self._root_task = self._get_task_from_target('[ROOT]')
+        LOGGER.debug('Creating set for known makefile targets')
+        self._targets = set()
 
     def parse_makefile(self, input_file=sys.stdin):
-        """Parses the Makefile and Builds the tasks DAG."""
+        """Parses the Makefile and Builds the tasks DAG.
+           Raises:
+             ParseError: Raised when an error is encountered
+             during the parsing."""
         LOGGER.debug('Parsing Makefile from %s', input_file.name)
         LOGGER.debug('Reinitializing Parser states')
         self._root_task.dependencies = []
         self._target_to_task = {'[ROOT]' : self._root_task}
+        self._targets = set()
         LOGGER.info('Reading Makefile')
         makefile_lines = input_file.readlines()
         LOGGER.info('Discarding empty lines and comment lines')
@@ -93,6 +102,14 @@ class Parser(object):
             if not current_target:
                 LOGGER.error('No target found on %s', current_line)
                 raise ParseError('No target specified on line ' + current_line)
+            if current_target in self._targets:
+                LOGGER.error('Target %s already declared', current_target)
+                raise ParseError('Target ' + current_target
+                                  + ' already declared')
+            else:
+                LOGGER.info('Adding target %s to the known targets',
+                            current_target)
+                self._targets.add(current_target)
             dependencies = current_recipe[1].strip()
             LOGGER.info('Creating task for target %s', current_target)
             current_task = self._get_task_from_target(current_target)

@@ -168,7 +168,7 @@ class Parser(object):
         topological_list = []
         # if _root_task has no dependency, the parsed Makefile was empty
         if not self._root_task.dependencies:
-            LOGGER.info('Finishing the sorting, empty Makefile')
+            LOGGER.warn('Finishing the sorting, empty Makefile')
             return topological_list
         # Only one task as dependency for root
         LOGGER.info('Getting the first task')
@@ -217,7 +217,8 @@ class Parser(object):
             LOGGER.info('Finishing _add_independent_task for %s', task.target)
             return
         if not task.dependencies:
-            LOGGER.info('No dependency for %s adding it in the list', task.target)
+            LOGGER.info('No dependency for %s adding it in the list',
+                        task.target)
             topological_list.append(task)
         else:
             LOGGER.info('Task %s has dependencies, adding them first',
@@ -287,6 +288,8 @@ def main():
     parser = Parser()
     parser.parse_makefile()
     sorted_tasks = parser.get_sorted_tasks()
+    first_task = parser.get_default_task()
+    print 'default task %s' %first_task.target
     for task in sorted_tasks:
         print '%s->' %task.target,
 

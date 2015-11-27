@@ -9,10 +9,28 @@ The master's code
 Divides the work into tasks and executes them with Celery
 """
 
-from celery import group, chain
+from celery import group
 from argparse import ArgumentParser, FileType
 from Parser import Parser
-from Work import do_task, red
+from Work import run_task, red
+
+class Tree(object):
+
+    def __init__(self, task):
+        stack = [task]
+        self.leaves = set()
+        while stack:
+            node = stack.pop()
+            if node.is_file_dependency():
+                continue
+            node.dependencies = [dep for dep in node.dependencies
+                                 if not dep.is_file_dependency()]
+            if not node.dependencies:
+                self.leaves.add(node)
+                continue
+            for dep in node.dependencies:
+                dep.children.append(node)
+                stack.append(dep)
 
 def main():
     """
@@ -31,8 +49,10 @@ def main():
     tasks = makefile_parser.get_sorted_tasks()
 
     for task in tasks:
-        if task.target == args.target:
-            return do_task.delay(task)
+        if task.target == args.target and not task.is_file_dependency():
+            res = group((run_task.s(leaf) for leaf in Tree(task).leaves))()
+            res.get()
+            return
     print "No rules found for target '%s'" % args.target
     
 

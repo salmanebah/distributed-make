@@ -30,6 +30,7 @@ package {'redis':
 
 file { 'rabbitmq-conf':
   ensure  => present,
+  notify  => Service['rabbitmq-service'],
   path    => '/etc/rabbitmq/rabbitmq.config',
   content => "[{rabbit, [{loopback_users, []}]}].\n",
   require => Package['rabbitmq']
@@ -37,6 +38,7 @@ file { 'rabbitmq-conf':
 
 exec { 'redis-conf':
   cwd     => '/etc/redis',
+  notify  => Service['redis-service'],
   command => 'sed -i \'/bind 127.0.0.1/c\# bind 127.0.0.1\' redis.conf',
   require => Package['redis'],
   path    => ['/bin', '/usr/bin', 'usr/local/bin']
@@ -45,7 +47,7 @@ exec { 'redis-conf':
 service { 'rabbitmq-service':
   ensure  => running,
   name    => 'rabbitmq-server',
-  require => File['rabbitmq-conf']
+  require => File['rabbitmq-conf'],
 }
 
 service { 'redis-service':

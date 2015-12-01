@@ -71,3 +71,13 @@ package {'bc':
   ensure => present,
   name   => 'bc'
 }
+
+package { 'unzip':
+  ensure => present,
+  name   => 'unzip'
+}
+
+package { 'ffmpeg':
+  ensure => present,
+  name   => 'ffmpeg'
+}

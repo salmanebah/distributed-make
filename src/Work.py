@@ -11,14 +11,18 @@ from Parser import Task
 from redis import Redis
 from time import sleep
 
-app = Celery('Work', backend="redis://localhost", broker='amqp://localhost')
+app = Celery()
+app.config_from_object('celeryconfig')
 
 logger = get_task_logger(__name__)
 logger.setLevel(INFO)
 
-red = Redis()
+with open('master_node', 'r') as stream:
+    master_node = stream.read().strip()
 
-@app.task(name="Work.run_task", ignore_result=False)
+red = Redis(host=master_node)
+
+@app.task
 def run_task(task):
     """
     Runs a task

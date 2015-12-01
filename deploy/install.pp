@@ -72,12 +72,18 @@ package {'bc':
   name   => 'bc'
 }
 
-package { 'unzip':
-  ensure => present,
-  name   => 'unzip'
-}
-
 package { 'ffmpeg':
   ensure => present,
   name   => 'ffmpeg'
+}
+
+exec { 'unzip-update':
+  command => 'apt-get update',
+  path    => ['/usr/bin', 'usr/local/bin']
+}
+
+package { 'unzip':
+  ensure  => present,
+  name    => 'unzip',
+  require => Exec['unzip-update']
 }

@@ -64,3 +64,8 @@ package {'imagemagick':
   ensure => present,
   name   => 'imagemagick'
 }
+
+package {'bc':
+  ensure => present,
+  name   => 'bc'
+}

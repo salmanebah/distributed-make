@@ -4,10 +4,10 @@
 import os
 
 with open("master_node", 'r') as stream:
-    master_node = stream.read().strip()
+    MASTER_NODE = stream.read().strip()
 
 # Broker
-BROKER_URL = "amqp://" + master_node
+BROKER_URL = "amqp://" + MASTER_NODE
 
 # Backend
-CELERY_RESULT_BACKEND = "redis://" + master_node + "/1"
+CELERY_RESULT_BACKEND = "redis://" + MASTER_NODE + "/1"

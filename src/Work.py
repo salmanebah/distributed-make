@@ -4,12 +4,14 @@
 #
 
 from celery import Celery, group
+from celeryconfig import MASTER_NODE
+from celery.signals import task_postrun
 from celery.utils.log import get_task_logger
 from logging import INFO
 from os import system
 from Parser import Task
 from redis import Redis
-from time import sleep
+from time import time
 
 app = Celery()
 app.config_from_object('celeryconfig')
@@ -17,10 +19,14 @@ app.config_from_object('celeryconfig')
 logger = get_task_logger(__name__)
 logger.setLevel(INFO)
 
-with open('master_node', 'r') as stream:
-    master_node = stream.read().strip()
+START_TIME = "start_time"
+END_TIME = "end_time"
 
-red = Redis(host=master_node)
+RED = Redis(host=MASTER_NODE)
+
+@task_postrun.connect()
+def close_timestamp(**kwargs):
+    RED.set(END_TIME, time())
 
 @app.task
 def run_task(task):
@@ -29,14 +35,14 @@ def run_task(task):
     """
     lock_name = task.target + "_lock"
     sem_name = task.target + "_sem"
-    with red.lock(lock_name):
-        if not red.exists(sem_name):
+    with RED.lock(lock_name):
+        if not RED.exists(sem_name):
             initial_val = len(task.dependencies)
             if initial_val == 0:
                 initial_val = 1
-            red.set(sem_name, initial_val)
-        red.decr(sem_name)
-        if int(red.get(sem_name)):
+            RED.set(sem_name, initial_val)
+        RED.decr(sem_name)
+        if int(RED.get(sem_name)):
             return
         else:
             for command in task.command.split(';'):

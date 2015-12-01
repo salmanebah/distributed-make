@@ -12,7 +12,8 @@ Divides the work into tasks and executes them with Celery
 from celery import group
 from argparse import ArgumentParser, FileType
 from Parser import Parser
-from Work import run_task, red
+from Work import run_task, RED, START_TIME, END_TIME
+from time import time
 
 class Tree(object):
 
@@ -36,7 +37,7 @@ def main():
     """
     Runs a makefile on several nodes
     """
-    red.flushall()
+    RED.flushall()
     parser = ArgumentParser(description='Distributed make')
     parser.add_argument('-f', metavar='file', dest='makefile',
                         required=True, type=FileType('r'),
@@ -50,6 +51,8 @@ def main():
 
     for task in tasks:
         if task.target == args.target and not task.is_file_dependency():
+            RED.set(START_TIME, time())
+            RED.set(END_TIME, time())
             res = group((run_task.s(leaf) for leaf in Tree(task).leaves))()
             res.get()
             return

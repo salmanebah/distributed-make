@@ -154,34 +154,18 @@ class Parser(object):
                 LOGGER.error('Cyclic target %s detected', task.target)
                 raise ParseError('Cyclic target ' + task.target + ' detected')
 
-    def get_sorted_tasks_for_target(self, target='default'):
-        """Returns the target's tasks sorted topologically."""
-        LOGGER.info('Sorting tasks topologically')
-        topological_list = []
-        # if _root_task has no dependency, the parsed Makefile was empty
+    def get_task(self, target):
+        """ Returns the task associated with a target."""
         if not self._root_task.dependencies:
-            LOGGER.warn('Finishing the sorting, empty Makefile')
-            return topological_list
-        # Only one task as dependency for root
-        LOGGER.info('Getting the task')
-        if target == 'default':
+            LOGGER.warn('No task, empty Makefile')
+        if not target:
             target_task = self._root_task.dependencies[0]
         elif target in self._target_to_task:
             target_task = self._target_to_task[target]
         else:
             LOGGER.error('No task found for target: %s', target)
             raise ParseError('No task found for target: ' + target)
-        LOGGER.info('Starting dependencies sort for the task: %s', target)
-        for dependent_task in target_task.dependencies:
-            LOGGER.info('Starting dependencies sort for %s',
-                        dependent_task.target)
-            Parser._sort_tasks_aux(dependent_task, topological_list)
-            LOGGER.info('Finishing dependencies sort for %s',
-                        dependent_task.target)
-        LOGGER.info('Finishing dependencies sort  for the task: %s', target)
-        LOGGER.info('Adding the task %s in the sorted list', target)
-        topological_list.append(target_task)
-        return topological_list
+        return target_task
 
     @staticmethod
     def _is_cyclically_dependent(task):
@@ -195,21 +179,6 @@ class Parser(object):
             if task in dependency.dependencies:
                 return True
         return False
-
-    @staticmethod
-    def _sort_tasks_aux(current_task_node, topological_list):
-        """Sorts recursively the DAG with a postfix traversal."""
-        # a task without dependency
-        if not current_task_node.dependencies:
-            # the first time we visit the leaf
-            if not current_task_node in topological_list:
-                topological_list.append(current_task_node)
-        else:
-            for dependent_task in current_task_node.dependencies:
-                Parser._sort_tasks_aux(dependent_task, topological_list)
-            # the first time we visit the node
-            if not current_task_node in topological_list:
-                topological_list.append(current_task_node)
 
     def get_dot_dependencies_tree(self):
         """Builds a digraph of the DAG for dot."""
@@ -254,9 +223,10 @@ def main():
     """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    sorted_tasks = parser.get_sorted_tasks_for_target('frame_1.png')
-    for task in sorted_tasks:
-        print '%s->' %task.target,
+    task = parser.get_task('')
+    print '%s->' %task.target,
+    for dep in task.dependencies:
+        print '%s' %dep.target
 
 if __name__ == '__main__':
     logging.config.fileConfig('logging.ini', disable_existing_loggers=False)

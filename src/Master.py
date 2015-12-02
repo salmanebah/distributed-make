@@ -9,8 +9,9 @@ The master's code
 Divides the work into tasks and executes them with Celery
 """
 
-from celery import group
 from argparse import ArgumentParser, FileType
+from celery import group
+from os.path import exists
 from Parser import Parser
 from Work import run_task, RED, START_TIME, END_TIME
 from time import time
@@ -38,26 +39,28 @@ def main():
     Runs a makefile on several nodes
     """
     RED.flushdb()
+    for makefile in ('GNU-makefile', 'makefile', 'Makefile'):
+        if exists(makefile):
+            default_makefile = makefile
     parser = ArgumentParser(description='Distributed make')
-    parser.add_argument('-f', metavar='file', dest='makefile',
-                        required=True, type=FileType('r'),
+    parser.add_argument('-f', metavar='file', nargs='?', dest='makefile',
+                        type=FileType('r'), default=default_makefile,
                         help='the file to use')
-    parser.add_argument('target', nargs='?',
+    parser.add_argument('target', nargs='?', default="",
                         help='the makefile\'s target to create')
     args = parser.parse_args()
+    if args.makefile is None:
+        print "No makefile was found. Stopping."
+        return
+
     makefile_parser = Parser()
     makefile_parser.parse_makefile(args.makefile)
-    tasks = makefile_parser.get_sorted_tasks()
+    task = makefile_parser.get_task(args.target)
 
-    for task in tasks:
-        if task.target == args.target and not task.is_file_dependency():
-            RED.set(START_TIME, time())
-            RED.set(END_TIME, time())
-            res = group((run_task.s(leaf) for leaf in Tree(task).leaves))()
-            res.get()
-            return
-    print "No rules found for target '%s'" % args.target
-    
+    if not task.is_file_dependency():
+        RED.set(START_TIME, time())
+        RED.set(END_TIME, time())
+        res = group((run_task.s(leaf) for leaf in Tree(task).leaves))()
 
 if __name__ == '__main__':
     main()

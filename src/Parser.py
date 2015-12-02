@@ -30,8 +30,11 @@ class Task(object):
         self.target = None
         self.dependencies = []
         self.command = None
-        self.executed = False
+        self.children = []
         self._node_id = node_id
+
+    def __repr__(self):
+        return self.target
 
     def __hash__(self):
         return self.target.__hash__()
@@ -217,7 +220,6 @@ class Parser(object):
             task.target = target
             self._target_to_task[target] = task
             return task
-
 
 def main():
     """Reads a makefile from stdin and prints dot commands."""

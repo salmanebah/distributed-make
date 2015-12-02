@@ -154,16 +154,8 @@ class Parser(object):
                 LOGGER.error('Cyclic target %s detected', task.target)
                 raise ParseError('Cyclic target ' + task.target + ' detected')
 
-    def get_default_task(self):
-        """Returns the first task in the Makefile."""
-        LOGGER.info('Getting the default task')
-        if not self._root_task.dependencies:
-            LOGGER.warn('No default task, empty Makefile')
-            return None
-        return self._root_task.dependencies[0]
-
-    def get_sorted_tasks(self):
-        """Returns the tasks sorted topologically."""
+    def get_sorted_tasks_for_target(self, target='default'):
+        """Returns the target's tasks sorted topologically."""
         LOGGER.info('Sorting tasks topologically')
         topological_list = []
         # if _root_task has no dependency, the parsed Makefile was empty
@@ -171,28 +163,24 @@ class Parser(object):
             LOGGER.warn('Finishing the sorting, empty Makefile')
             return topological_list
         # Only one task as dependency for root
-        LOGGER.info('Getting the first task')
-        first_task = self._root_task.dependencies[0]
-        LOGGER.info('Starting dependencies sort for the first task: %s',
-                    first_task.target)
-        for dependent_task in first_task.dependencies:
+        LOGGER.info('Getting the task')
+        if target == 'default':
+            target_task = self._root_task.dependencies[0]
+        elif target in self._target_to_task:
+            target_task = self._target_to_task[target]
+        else:
+            LOGGER.error('No task found for target: %s', target)
+            raise ParseError('No task found for target: ' + target)
+        LOGGER.info('Starting dependencies sort for the task: %s', target)
+        for dependent_task in target_task.dependencies:
             LOGGER.info('Starting dependencies sort for %s',
                         dependent_task.target)
             Parser._sort_tasks_aux(dependent_task, topological_list)
             LOGGER.info('Finishing dependencies sort for %s',
                         dependent_task.target)
-        LOGGER.info('Finishing dependencies sort  for the first task: %s',
-                    first_task.target)
-        LOGGER.info('Adding the first task %s in the sorted list',
-                    first_task.target)
-        topological_list.append(first_task)
-        # add all tasks which no other task depends on
-        for independent_task in self._target_to_task.values():
-            if independent_task not in topological_list and \
-               independent_task != self._root_task:
-                LOGGER.info('Adding independent task %s '
-                            + 'in the sorted list', independent_task.target)
-                Parser._add_independent_task(independent_task, topological_list)
+        LOGGER.info('Finishing dependencies sort  for the task: %s', target)
+        LOGGER.info('Adding the task %s in the sorted list', target)
+        topological_list.append(target_task)
         return topological_list
 
     @staticmethod
@@ -207,27 +195,6 @@ class Parser(object):
             if task in dependency.dependencies:
                 return True
         return False
-
-    @staticmethod
-    def _add_independent_task(task, topological_list):
-        """ Add independent task in the topological list."""
-        LOGGER.info('Starting _add_independent_task for %s', task.target)
-        if task in topological_list:
-            LOGGER.info('Task %s already in the list', task.target)
-            LOGGER.info('Finishing _add_independent_task for %s', task.target)
-            return
-        if not task.dependencies:
-            LOGGER.info('No dependency for %s adding it in the list',
-                        task.target)
-            topological_list.append(task)
-        else:
-            LOGGER.info('Task %s has dependencies, adding them first',
-                        task.target)
-            for dependent_task in task.dependencies:
-                Parser._add_independent_task(dependent_task, topological_list)
-            LOGGER.info('Adding Task %s in the list', task.target)
-            topological_list.append(task)
-        LOGGER.info('Finishing _add_independent_task for %s', task.target)
 
     @staticmethod
     def _sort_tasks_aux(current_task_node, topological_list):
@@ -287,9 +254,7 @@ def main():
     """Reads a makefile from stdin and prints dot commands."""
     parser = Parser()
     parser.parse_makefile()
-    sorted_tasks = parser.get_sorted_tasks()
-    first_task = parser.get_default_task()
-    print 'default task %s' %first_task.target
+    sorted_tasks = parser.get_sorted_tasks_for_target('frame_1.png')
     for task in sorted_tasks:
         print '%s->' %task.target,
 

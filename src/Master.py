@@ -37,7 +37,7 @@ def main():
     """
     Runs a makefile on several nodes
     """
-    RED.flushall()
+    RED.flushdb()
     parser = ArgumentParser(description='Distributed make')
     parser.add_argument('-f', metavar='file', dest='makefile',
                         required=True, type=FileType('r'),

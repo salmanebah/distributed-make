@@ -119,7 +119,7 @@ class Parser(object):
             if current_target in self._targets:
                 LOGGER.error('Target %s already declared', current_target)
                 raise ParseError('Target ' + current_target
-                                  + ' already declared')
+                                 + ' already declared')
             else:
                 LOGGER.info('Adding target %s to the known targets',
                             current_target)

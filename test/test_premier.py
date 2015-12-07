@@ -3,7 +3,6 @@ module to test the parsing of the Mafile in makefiles/premier
 """
 
 import sys
-import re
 import unittest
 
 sys.path.append('../src')
@@ -26,60 +25,38 @@ class PremierTestCase(unittest.TestCase):
         """ Test that premier is a valid target in the makefile."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        target_task = [task for task in tasks if task.target == 'premier']
-        self.assertIsNotNone(target_task)
+        task = parser.get_task('premier')
+        self.assertIsNotNone(task)
 
     def test_premier_valid_command(self):
         """ Test that the command in the premier target is valid."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        target_tasks = [task for task in tasks if task.target == 'premier']
-        self.assertEquals(len(target_tasks), 1)
+        task = parser.get_task('premier')
         self.assertEquals('gcc premier.c -o premier -lm',
-                          target_tasks[0].command)
+                          task.command)
 
     def test_premier_dependency(self):
         """ Test that premier.c is a dependency for premier and is a file."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        premier_task = [task for task in tasks if task.target == 'premier'][0]
-        self.assertEquals('premier.c', premier_task.dependencies[0].target)
-        self.assertTrue(premier_task.dependencies[0].is_file_dependency())
+        task = parser.get_task('premier')
+        self.assertEquals('premier.c', task.dependencies[0].target)
+        self.assertTrue(task.dependencies[0].is_file_dependency())
 
     def test_lists_are_valid_target(self):
-        """ Test that list.txt and list[1..20].txt are valid targets."""
+        """ Test that list[1..20].txt are valid targets."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        list_tasks = [task for task in tasks if task.target.startswith('list')]
-        self.assertEquals(len(list_tasks), 21)
-        # check that all list[1..20].txt targets have premier as dependency
-        self.assertTrue(all((lambda task:
-                             task.dependencies[0].target == 'premier') \
-                            (curr_task) \
-                            for curr_task in list_tasks
-                            if re.match('list[0-9]+\.txt', curr_task.target)))
-        # check that all list[1..20]*.txt targets have command
-        # starting with ./premier
-        self.assertTrue(all((lambda task:
-                             task.command.startswith('./premier')) \
-                            (curr_task) \
-                            for curr_task in list_tasks
-                            if re.match('list[0-9]+\.txt', curr_task.target)))
+        for i in range(1, 21):
+            task = parser.get_task('list{}.txt'.format(i))
+            self.assertTrue(task.dependencies[0].target == 'premier')
+            self.assertTrue(task.command.startswith('./premier'))
 
     def test_all_targets(self):
-        """ Test that all targets are either premier or
-            list.txt or list[1..20].txt. """
+        """ Test that list.txt is the default target. """
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        target_names = [task.target for task in tasks
-                        if not task.is_file_dependency()]
-        self.assertEquals(len(target_names), 22)
-        self.assertTrue(all((lambda name:
-                             name == 'premier'
-                             or re.match('list[0-9]*\.txt', name)) \
-                            (curr_name) for curr_name in target_names))
+        task = parser.get_task('')
+        self.assertTrue(task.target == 'list.txt')
+        self.assertEquals(len(task.dependencies), 20)

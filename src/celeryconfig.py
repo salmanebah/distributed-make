@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 #
 
-import os
+"""
+This file is used by this package to configure both the master
+and the slave processes
+"""
 
 with open("master_node", 'r') as stream:
     MASTER_NODE = stream.read().strip()

@@ -9,7 +9,7 @@ from celery.signals import task_postrun
 from celery.utils.log import get_task_logger
 from logging import INFO
 from os import system
-from Parser import Task
+from makeparse import Task
 from redis import Redis
 from time import time
 

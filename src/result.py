@@ -3,7 +3,7 @@
 # this file is part of the SDCA project (team 11)
 #
 
-from Work import RED, START_TIME, END_TIME
+from work import RED, START_TIME, END_TIME
 import sys
 
 def main(result_file):

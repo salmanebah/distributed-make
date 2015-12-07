@@ -12,8 +12,8 @@ Divides the work into tasks and executes them with Celery
 from argparse import ArgumentParser, FileType
 from celery import group
 from os.path import exists
-from Parser import Parser
-from Work import run_task, RED, START_TIME, END_TIME
+from makeparse import Parser
+from work import run_task, RED, START_TIME, END_TIME
 from time import time
 
 class DepTree(object):

@@ -92,7 +92,7 @@ def main():
     if not task.is_file_dependency():
         # Create a dependency tree and launch all the leaves
         # in parrallel
-        res = group((run_task.s(leaf) for leaf in DepTree(task).leaves))()
+        group((run_task.s(leaf) for leaf in DepTree(task).leaves))()
 
 if __name__ == '__main__':
     main()

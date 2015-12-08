@@ -45,8 +45,8 @@ celery worker -A work -l info
 ```sh
 python master.py -f Makefile premier
 ```
-
-## Deploying on Grid'5000 <a name="dep-g5k"></a>
+<a name="dep-g5k"></a>
+## Deploying on Grid'5000 
 - Reserve nodes on Grid'5000 with the script `reserve.sh` in `deploy` directory.
 ```sh
 ./reserve.sh 4 1:30:00
@@ -60,8 +60,8 @@ for example, the commande below reserves ```4 nodes for 1h30```:
 This will create two files `master_node` and `worker_nodes` with respectively the
 addresses of the machines acting as the master and the workers.
 
-
-## Running on Grid'5000 <a name="run-g5k"></a>
+<a name="run-g5k"></a>
+## Running on Grid'5000 
 Running the program on Grid'5000 **assumes the deployment described earlier**.
 
 **NOTE:** The program uses `nfs` to share files between the nodes
@@ -89,8 +89,8 @@ celery worker -A work -linfo
 ```sh
 python master.py -f Makefile premier
 ```
-
-## Makefile options <a name="make-opt"></a>
+<a name="make-opt"></a>
+## Makefile options 
 ```sh
 python master.py -h
 ```

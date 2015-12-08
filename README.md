@@ -1,6 +1,13 @@
 # distributed-make
 A distributed make using celery for task distribution.
-## Local installation ubuntu 14.04
+
+1. [Local installation](#local-install)
+2. [Running locally](#run-local)
+3. [Deploying on Grid'5000](#dep-g5k)
+4. [Running on Grid'5000](#run-g5k)
+5. [Makefile options](#make-opt)
+
+## Local installation ubuntu 14.04<a name="local-install"></a>
 - Install puppet: 
 ```sh
 sudo apt-get install puppet
@@ -14,7 +21,7 @@ sudo puppet module install --modulepath=/usr/share/puppet/modules puppetlabs-apt
 sudo puppet apply local_intall.pp
 ```
 
-## Running locally
+## Running locally <a name="run-local"></a>
 Assuming the following directory structure:
 ```
 - src
@@ -37,7 +44,7 @@ celery worker -A work -l info
 python master.py -f Makefile premier
 ```
 
-## Deploying on Grid'5000
+## Deploying on Grid'5000 <a name="dep-g5k"></a>
 - Reserve nodes on Grid'5000 with the script `reserve.sh` in `deploy` directory.
 ```sh
 ./reserve.sh 4 1:30:00
@@ -52,7 +59,7 @@ This will create two files `master_node` and `worker_nodes` with respectively th
 addresses of the machines acting as the master and the workers.
 
 
-## Running on Grid'5000
+## Running on Grid'5000 <a name="run-g5k"></a>
 Running the program on Grid'5000 **assumes the deployment described earlier**.
 
 **NOTE:** The program uses `nfs` to share files between the nodes
@@ -80,3 +87,11 @@ celery worker -A work -linfo
 ```sh
 python master.py -f Makefile premier
 ```
+
+## Makefile options <a name="make-opt"></a>
+```sh
+python master.py -h
+```
+displays the ```master.py``` command line option. By default, running ```python master.py``` will use ```GNU-Makefile``` 
+or ```makefile``` or ```Makefile``` and will execute the first target in the makefile.
+The `-a` or ```--async``` option allows to run asynchronously all the tasks without blocking the ```master``` otherwise it will wait for the last task's completion. 

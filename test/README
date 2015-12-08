@@ -1,0 +1,2 @@
+Run the unit tests with from directory 'test':
+  $ python -m unittest discover -v

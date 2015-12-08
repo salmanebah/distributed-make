@@ -27,9 +27,7 @@ class Blender249TestCase(unittest.TestCase):
             with the expected command and dependencies."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        # raises StopIteration if not found
-        cube_task = next(task for task in tasks if task.target == 'cube.mpg')
+        cube_task = parser.get_task('')
         command_parts = cube_task.command.split()
         dependency_names = [dep.target for dep in cube_task.dependencies]
         self.assertEquals(len(command_parts), 115)
@@ -46,30 +44,18 @@ class Blender249TestCase(unittest.TestCase):
              is not a file dependency and check its command."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        cube_anim_task = next(task for task in tasks
-                              if task.target == 'cube_anim.blend')
+        cube_anim_task = parser.get_task('cube_anim.blend')
         self.assertFalse(cube_anim_task.is_file_dependency())
         self.assertEquals(cube_anim_task.command,
                           'rm cube_anim.blend ; unzip cube_anim.zip')
 
     def test_other_target_are_frame(self):
-        """ Test that target other than cube.png and cube_anim.blend
-            are all frame_[0-9]+.png, have cube_anim.blend as dependency
-            and their command starts with blender."""
+        """ Test that all frame_[0-9]+.png are all targets, have cube_anim.blend
+            as dependency and their command starts with blender."""
         parser = Parser()
         parser.parse_makefile(self.makefile)
-        tasks = parser.get_sorted_tasks()
-        frame_tasks = [task for task in tasks
-                       if task.target.startswith('frame')]
-        names = [task.target for task in frame_tasks]
-        commands = [task.command for task in frame_tasks]
-        dependencies = [task.dependencies for task in frame_tasks]
-        self.assertEquals(len(names), 113)
-        self.assertTrue(all((lambda name: re.match('frame_[0-9]+\.png', name) \
-                            (curr_name) for curr_name in names)))
-        self.assertTrue(all((lambda dep: len(dep) == 1
-                            and dep[0].target == 'cube_anim.blend') \
-                            (curr_dep) for curr_dep in dependencies))
-        self.assertTrue(all((lambda cmd: cmd.startswith('blender')) \
-                            (curr_cmd) for curr_cmd in commands))
+        for i in range(1, 114):
+            frame_task = parser.get_task('frame_{}.png'.format(i))
+            self.assertEquals(frame_task.dependencies[0].target,
+                              'cube_anim.blend')
+            self.assertTrue(frame_task.command.startswith('blender'))

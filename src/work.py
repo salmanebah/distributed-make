@@ -23,20 +23,11 @@ APP.config_from_object('celeryconfig')
 START_TIME = "start_time"
 END_TIME = "end_time"
 
+TASK_NUM = "task_num"
+END_LIST = "endlist"
+SLAVE_LOCK = "slavelock"
+
 RED = Redis(host=MASTER_NODE)
-
-@task_postrun.connect()
-def close_timestamp(**kwargs):
-    """
-    Sets the value of the key named ``END_TIME`` in the redis
-    database to the current time
-
-    After each task finishes this function is called, therefore after
-    the last task, the key ``END_TIME`` key holds the timestamp of the
-    end of the last task.
-    """
-    # We don't use kwargs, but we keep it for compatibility issues
-    RED.set(END_TIME, time())
 
 @APP.task
 def run_task(task):
@@ -91,4 +82,15 @@ def run_task(task):
 
             # Launch all the task's dependencies in parrallel
             group((run_task.s(child) for child in task.children))()
+
+    # The task was run at this point
+    with RED.lock(SLAVE_LOCK):
+        # Decrement the number of task to run
+        RED.decr(TASK_NUM)
+        if not int(RED.get(TASK_NUM)):
+            # There are no task to run anymore
+            # Set the end time
+            RED.set(END_TIME, time())
+            # Push something on the ``END_LIST`` so the master can return
+            RED.rpush(END_LIST, 0)
 

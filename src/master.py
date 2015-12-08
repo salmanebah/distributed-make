@@ -13,7 +13,7 @@ from argparse import ArgumentParser, FileType
 from celery import group
 from os.path import exists
 from makeparse import Parser
-from work import run_task, RED, START_TIME, END_TIME
+from work import run_task, RED, START_TIME, END_TIME, END_LIST, TASK_NUM
 from time import time
 
 class DepTree(object):
@@ -32,6 +32,10 @@ class DepTree(object):
         so that we can easily iterate on the tree nodes from the
         leaves to the root.
         """
+        if task.is_file_dependency():
+            raise RuntimeError("Cannot build a tree from a file dependency")
+        # The number of nodes in the tree
+        self.nodes_num = 0
 
         # Classical algorithm to iterate on a tree's nodes using
         # a stack
@@ -39,12 +43,10 @@ class DepTree(object):
         self.leaves = set()
         while stack:
             node = stack.pop()
-            if node.is_file_dependency():
-                # A task can be just a file that is required before
-                # executing the makefile, we do not care about those
-                continue
+            self.nodes_num += 1
             node.dependencies = [dep for dep in node.dependencies
                                  if not dep.is_file_dependency()]
+
             if not node.dependencies:
                 self.leaves.add(node)
                 continue
@@ -67,9 +69,11 @@ def main():
 
     # Parse the args from the command line
     parser = ArgumentParser(description='Distributed make')
-    parser.add_argument('-f', metavar='file', nargs='?', dest='makefile',
-                        type=FileType('r'), default=default_makefile,
+    parser.add_argument('-f', '--file', nargs='?', dest='makefile',
+                        default=default_makefile, type=FileType('r'),
                         help='the file to use')
+    parser.add_argument('-a', '--async', action='store_true',
+                        help='do not wait for tasks completion')
     parser.add_argument('target', nargs='?', default="",
                         help='the makefile\'s target to create')
     args = parser.parse_args()
@@ -89,10 +93,14 @@ def main():
     # Fetch the target
     task = makefile_parser.get_task(args.target)
 
-    if not task.is_file_dependency():
-        # Create a dependency tree and launch all the leaves
-        # in parrallel
-        group((run_task.s(leaf) for leaf in DepTree(task).leaves))()
+    # Create a dependency tree and launch all the leaves
+    # in parrallel
+    dep_tree = DepTree(task)
+    RED.set(TASK_NUM, dep_tree.nodes_num)
+    group((run_task.s(leaf) for leaf in dep_tree.leaves))()
+    if not args.async:
+        # Wait for the last task to return
+        RED.blpop(END_LIST)
 
 if __name__ == '__main__':
     main()

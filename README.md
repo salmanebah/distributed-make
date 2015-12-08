@@ -7,7 +7,8 @@ A distributed make using celery for task distribution.
 4. [Running on Grid'5000](#run-g5k)
 5. [Makefile options](#make-opt)
 
-## Local installation ubuntu 14.04<a name="local-install"></a>
+<a name="local-install"></a>
+## Local installation ubuntu 14.04
 - Install puppet: 
 ```sh
 sudo apt-get install puppet
@@ -21,7 +22,8 @@ sudo puppet module install --modulepath=/usr/share/puppet/modules puppetlabs-apt
 sudo puppet apply local_intall.pp
 ```
 
-## Running locally <a name="run-local"></a>
+<a name="run-local"></a>
+## Running locally 
 Assuming the following directory structure:
 ```
 - src

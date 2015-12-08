@@ -9,7 +9,7 @@ sudo apt-get install puppet
 ```sh
 sudo puppet module install --modulepath=/usr/share/puppet/modules puppetlabs-apt
 ```
-- Apply the puppet manifest
+- Apply the puppet manifest in ```deploy```
 ```sh
 sudo puppet apply local_intall.pp
 ```

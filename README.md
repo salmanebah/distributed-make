@@ -13,19 +13,8 @@ sudo puppet module install --modulepath=/usr/share/puppet/modules puppetlabs-apt
 ```sh
 sudo puppet apply local_intall.pp
 ```
-## Deploying on Grid'5000
-1. Reserve nodes on Grid'5000 with the script `reserve.sh` in `deploy` directory:
-```sh
-./reserve.sh 4 1:30:00
-```
-2. Automatically provision the nodes with the script `deploy.sh` in `deploy` directory
-```sh
-./deploy.sh
-```
 
-This will create two files `master_node` and `worker_nodes` with respectively the
-addresses of the machines acting as the master and the workers.
-## Running on locally
+## Running locally
 Assuming the following directory structure:
 ```
 - src
@@ -48,6 +37,20 @@ celery worker -A work -linfo
 python master.py -f Master premier
 ```
 
+## Deploying on Grid'5000
+1. Reserve nodes on Grid'5000 with the script `reserve.sh` in `deploy` directory:
+```sh
+./reserve.sh 4 1:30:00
+```
+2. Automatically provision the nodes with the script `deploy.sh` in `deploy` directory
+```sh
+./deploy.sh
+```
+
+This will create two files `master_node` and `worker_nodes` with respectively the
+addresses of the machines acting as the master and the workers.
+
+
 ## Running on Grid'5000
 Running the program on Grid'5000 **assumes the deployment described earlier**.
 
@@ -64,8 +67,10 @@ Assuming the following directory structure:
   - Makefile
   - premier.c
   - premier
+  - master_node
+  - worker_nodes
 ```
-1. Start ```celery``` for all worker-node in worker_nodes 
+1. Start ```celery``` for all ```worker-node``` in ```worker_nodes```
 ```sh
 ssh root@worker-node
 celery worker -A work -linfo 

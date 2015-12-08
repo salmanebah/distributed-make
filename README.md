@@ -94,6 +94,4 @@ python master.py -f Makefile premier
 ```sh
 python master.py -h
 ```
-displays the ```master.py``` command line option. By default, running ```python master.py``` will use ```GNU-Makefile``` 
-or ```makefile``` or ```Makefile``` and will execute the first target in the makefile.
-The `-a` or ```--async``` option allows to run asynchronously all the tasks without blocking the ```master``` otherwise it will wait for the last task's completion. 
+displays the ```master.py``` command line option. By default, running ```python master.py``` without the ```-f``` switch will use ```GNU-Makefile``` or ```makefile``` or ```Makefile``` found in the current directory and will execute the first target in the ```makefile```. The `-a` or ```--async``` option allows to run asynchronously all the tasks without blocking the ```master``` otherwise it will wait for the last task's completion. 

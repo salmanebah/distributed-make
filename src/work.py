@@ -60,14 +60,17 @@ def run_task(task):
             #
             # ``value`` will be decremented each time one of the
             # dependency of the given task will be run
-            RED.set(sem_name, len(task.dependencies))
+            if task.dependencies:
+                RED.set(sem_name, len(task.dependencies))
+            else:
+                RED.set(sem_name, 1)
 
-        # This way, if (value == 1) the task's last dependency just
+        RED.decr(sem_name)
+        # This way, if (value == 0) the task's last dependency just
         # ended and we can run the task's itself
-        if int(RED.get(sem_name)) != 1:
-            RED.decr(sem_name)
+        if int(RED.get(sem_name)):
             # If the value associated to ``sem_name`` in the database
-            # is not 1 the task either is not ready (some dependencies
+            # is not 0 the task either is not ready (some dependencies
             # haven't been run) or it has already been run (for
             # whatever reason) and we don't want to do it again
             # This last part is mainly defensive

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+
+</head>
+
+<body>
+
+<h1>distributed-make</h1>
+
+<p>A distributed make using celery for task distribution.</p>
+
+<ol>
+<li><a href="#local-install">Local installation</a></li>
+<li><a href="#run-local">Running locally</a></li>
+<li><a href="#dep-g5k">Deploying on Grid'5000</a></li>
+<li><a href="#run-g5k">Running on Grid'5000</a></li>
+<li><a href="#make-opt">Makefile options</a></li>
+</ol>
+
+<p><a name="local-install"></a></p>
+
+<h2>Local installation ubuntu 14.04</h2>
+
+<ul>
+<li>Install puppet: 
+<code>sh
+sudo apt-get install puppet
+</code></li>
+<li>Install puppetlabs-apt: 
+<code>sh
+sudo puppet module install --modulepath=/usr/share/puppet/modules puppetlabs-apt
+</code></li>
+<li>Apply the puppet manifest in <code>deploy</code>
+<code>sh
+sudo puppet apply local_intall.pp
+</code></li>
+</ul>
+
+<p><a name="run-local"></a></p>
+
+<h2>Running locally</h2>
+
+<p>Assuming the following directory structure:
+<code>
+- src
+  - celeryconfig.py
+  - makeparse.py
+  - logging.ini
+  - master.py
+  - result.py
+  - work.py
+  - Makefile
+  - premier.c
+</code>
+- Create <code>master_node</code> with <code>localhost</code> as the content
+- Start <code>celery</code> 
+<code>sh
+celery worker -A work -l info
+</code>
+- Launch the main program with:
+<code>sh
+python master.py -f Makefile premier
+</code>
+<a name="dep-g5k"></a></p>
+
+<h2>Deploying on Grid'5000</h2>
+
+<ul>
+<li>Reserve nodes on Grid'5000 with the script <code>reserve.sh</code> in <code>deploy</code> directory.
+<code>sh
+./reserve.sh 4 1:30:00
+</code>
+for example, the commande below reserves <code>4 nodes for 1h30</code>:</li>
+<li>Automatically provision the nodes with the script <code>deploy.sh</code> in <code>deploy</code> directory
+<code>sh
+./deploy.sh
+</code></li>
+</ul>
+
+<p>This will create two files <code>master_node</code> and <code>worker_nodes</code> with respectively the
+addresses of the machines acting as the master and the workers.</p>
+
+<p><a name="run-g5k"></a></p>
+
+<h2>Running on Grid'5000</h2>
+
+<p>Running the program on Grid'5000 <strong>assumes the deployment described earlier</strong>.</p>
+
+<p><strong>NOTE:</strong> The program uses <code>nfs</code> to share files between the nodes</p>
+
+<p>Assuming the following directory structure:
+<code>
+- src
+  - celeryconfig.py
+  - makeparse.py
+  - logging.ini
+  - master.py
+  - result.py
+  - work.py
+  - Makefile
+  - premier.c
+  - master_node
+  - worker_nodes
+</code>
+- Start <code>celery</code> for all <code>worker-node</code> in <code>worker_nodes</code>
+<code>sh
+ssh root@worker-node
+celery worker -A work -linfo
+</code>
+- Launch the main program with:
+<code>sh
+python master.py -f Makefile premier
+</code>
+<a name="make-opt"></a></p>
+
+<h2>Makefile options</h2>
+
+<p><code>sh
+python master.py -h
+</code>
+displays the <code>master.py</code> command line option. By default, running <code>python master.py</code> without the <code>-f</code> switch will use <code>GNU-Makefile</code> or <code>makefile</code> or <code>Makefile</code> found in the current directory and will execute the first target in the <code>makefile</code>. The <code>-a</code> or <code>--async</code> option allows to run asynchronously all the tasks without blocking the <code>master</code> otherwise it will wait for the last task's completion. </p>
+
+</body>
+</html>
